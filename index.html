@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>मोबाइल रिचार्ज — Production-ready</title>
+<link rel="icon" href="data:;base64,iVBORw0KGgo=" />
+<style>
+  :root{--brand:#d60000;--brand-dark:#a80000;--bg:#f7f7f7;--card:#fff;--text:#222;--muted:#666}
+  *{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:Inter, 'Segoe UI', system-ui, sans-serif;color:var(--text)}
+  header{position:sticky;top:0;z-index:20;background:linear-gradient(90deg,#ff0000,#b30000);color:#fff;padding:12px 16px;font-weight:800;font-size:18px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+  main{max-width:720px;margin:12px auto;padding:12px}
+  .card{background:var(--card);border-radius:12px;padding:14px;border:1px solid #eee;box-shadow:0 6px 20px rgba(0,0,0,.06)}
+  label{display:block;font-weight:700;margin-top:10px}
+  input,select,button{width:100%;padding:10px 12px;margin-top:8px;font-size:15px;border-radius:10px;border:1px solid #ddd}
+  input:focus,select:focus{outline:none;border-color:#ff3333;box-shadow:0 0 0 4px rgba(255,0,0,.08)}
+  .row{display:flex;gap:10px}
+  .col{flex:1}
+  .btn{background:var(--brand);color:#fff;border:none;font-weight:800;cursor:pointer;padding:10px;border-radius:10px}
+  .btn.secondary{background:#eee;color:#111;font-weight:700}
+  .muted{color:var(--muted);font-size:13px}
+  .plans-wrap{margin-top:12px;max-height:56vh;overflow:auto}
+  .plans{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+  .plan{border-radius:12px;padding:10px;background:#fff;border:1px solid #f1f1f1;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+  .price{font-size:18px;font-weight:900;color:var(--brand)}
+  .mini{font-size:12px;color:#666}
+  .filters{display:flex;gap:8px;margin-top:10px}
+  .filters input{flex:1}
+  .summary{white-space:pre-line}
+  .qr{max-width:220px;display:block;margin:8px auto;border-radius:10px}
+  .sticky-head{position:sticky;top:0;background:linear-gradient(90deg,#fff,#fff);padding:8px 6px;border-left:4px solid var(--brand);font-weight:800;margin-bottom:8px}
+  footer{margin-top:12px;text-align:center;color:var(--muted);font-size:13px}
+  .tag{display:inline-block;padding:6px 8px;border-radius:999px;border:1px solid #eee;font-size:12px;margin-right:6px}
+  .success{background:#e6fff1;border:1px solid #bdeecf;color:#0f7a45;padding:8px;border-radius:8px}
+  .danger{background:#fff0f0;border:1px solid #f3c0c0;color:#a00;padding:8px;border-radius:8px}
+  .small{font-size:13px}
+  @media (max-width:520px){.row{flex-direction:column}}
+</style>
+</head>
+<body>
+<header>
+  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Jio_Logo.svg/1200px-Jio_Logo.svg.png" alt="logo" style="height:30px;filter:grayscale(1);opacity:.95">
+  <div>मोबाइल रिचार्ज</div>
+</header>
+<main>
+  <!-- Step 1 -->
+  <section class="card" id="step1">
+    <h3>स्टेप 1 — मोबाइल नंबर</h3>
+    <div class="muted">पिछला नंबर सुरक्षित है (local).</div>
+    <label for="mobile">मोबाइल नंबर</label>
+    <input id="mobile" type="tel" inputmode="numeric" maxlength="10" placeholder="10 अंकों का नंबर" autocomplete="tel">
+    <div class="row" style="margin-top:6px">
+      <div class="col">
+        <label for="operator">ऑपरेटर</label>
+        <select id="operator">
+          <option value="">— चुनें —</option>
+          <option value="jio">Jio</option>
+          <option value="airtel">Airtel</option>
+          <option value="vi">Vi</option>
+          <option value="bsnl">BSNL</option>
+        </select>
+      </div>
+      <div class="col">
+        <label for="circle">सर्कल (optional)</label>
+        <input id="circle" placeholder="उदा. Delhi, Maharashtra">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn" id="toPlans">Recharge Now</button>
+      <button class="btn secondary" id="useLast">Use Last</button>
+    </div>
+    <div id="detectNote" class="muted small" style="margin-top:8px"></div>
+  </section>
+
+  <!-- Step 2 -->
+  <section class="card" id="step2" style="display:none;margin-top:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h3>स्टेप 2 — प्लान चुनें</h3>
+      <div>
+        <span class="tag" id="selectedNumberTag"></span>
+        <button class="btn secondary" id="backTo1">⬅ वापस</button>
+      </div>
+    </div>
+
+    <div class="filters">
+      <input id="searchPlan" placeholder="सर्च प्लान — राशि, वैधता या लाभ">
+      <select id="sortPlan" style="max-width:160px">
+        <option value="">Sort</option>
+        <option value="price_asc">Price ↑</option>
+        <option value="price_desc">Price ↓</option>
+      </select>
+    </div>
+
+    <div class="plans-wrap" id="plansWrap">
+      <!-- plans render here -->
+    </div>
+  </section>
+
+  <!-- Step 3 -->
+  <section class="card" id="step3" style="display:none;margin-top:12px">
+    <h3>स्टेप 3 — पेमेंट</h3>
+    <div class="summary" id="summary"></div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <a id="gpayBtn" class="btn" href="#">Pay with Google Pay</a>
+      <a id="phonepeBtn" class="btn" href="#">Pay with PhonePe</a>
+      <a id="anyUpiBtn" class="btn secondary" href="#">Open in any UPI App</a>
+    </div>
+
+    <img id="qrImg" class="qr" alt="UPI QR" />
+
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn secondary" id="simulateSuccess">Simulate Success</button>
+      <button class="btn secondary" id="simulateFail">Simulate Failure</button>
+      <button class="btn" id="saveOrder">Save order</button>
+    </div>
+
+    <div id="paymentResult" style="margin-top:10px"></div>
+    <div style="margin-top:8px" class="muted small">नोट: वास्तविक भुगतान के लिए बैकएंड order-create और UPI सत्यापन ज़रूरी है।</div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn secondary" id="changePlan">⬅ प्लान बदलें</button>
+    </div>
+  </section>
+
+  <footer>
+    © For production integration you need a server to create & verify orders।
+  </footer>
+
+  <section class="card" style="margin-top:12px">
+    <h4>Integration Notes (रन-डाउन)</h4>
+    <ol class="muted small">
+      <li>Frontend should call your backend to create an order (orderId, amount, timestamp).</li>
+      <li>Backend should return a signed payload or transaction id that you embed in UPI note so you can verify later.</li>
+      <li>After UPI payment, verify payment server-side via PG/UPI callback or user-provided transaction ref before crediting the recharge API.</li>
+      <li>Never rely only on client-side 'success' — always verify server-side.</li>
+    </ol>
+  </section>
+</main>
+
+<script>
+const UPI_ID = "Q3422744100@ybl"; 
+const UPI_NAME = "Merchant";
+const NOTE_PREFIX = "Recharge";
+
+const plansData = {
+  jio:[{amount:119,validity:"14 दिन",benefits:"1.5GB/दिन"},{amount:149,validity:"28 दिन",benefits:"2GB/दिन"},{amount:199,validity:"28 दिन",benefits:"1.5GB/दिन"}],
+  airtel:[{amount:99,validity:"15 दिन",benefits:"टॉकटाइम"},{amount:199,validity:"28 दिन",benefits:"1.5GB/दिन"},{amount:299,validity:"28 दिन",benefits:"2GB/दिन"}],
+  vi:[{amount:149,validity:"28 दिन",benefits:"1GB/दिन"},{amount:199,validity:"28 दिन",benefits:"1.5GB/दिन"}],
+  bsnl:[{amount:94,validity:"30 दिन",benefits:"टॉकटाइम + 2GB"},{amount:350,validity:"90 दिन",benefits:"Unlimited कॉल + 5GB"}]
+};
+
+let state = {mobile:'',operator:'',circle:'',plan:null,order:null};
+
+const $ = id=>document.getElementById(id);
+function show(id){document.querySelectorAll('main > section.card').forEach(s=>s.style.display='none'); $(id).style.display='block'}
+function saveLastNumber(n){try{localStorage.setItem('lastMobile',n)}catch(e){}}
+function loadLastNumber(){try{return localStorage.getItem('lastMobile')||''}catch(e){return ''}}
+
+function detectOperatorFromPrefix(mobile){
+  const p = mobile.slice(0,4);
+  const jioPrefixes = ['700','701','702','703','704','705','706','707','708','709','749','750','751','752','753','754','755','756','757','758','759','880','881'];
+  const airtelPrefixes = ['981','982','983','984','985','986','987','988','989','790','791','792','793','794'];
+  const viPrefixes = ['940','941','942','943','944','945','946','947','948','949','860','861'];
+  const bsnlPrefixes = ['9403','9404','9405','9442','994'];
+  if(!/^[6-9]\d{9}$/.test(mobile)) return '';
+  const start3 = mobile.slice(0,3);
+  if(jioPrefixes.includes(start3)) return 'jio';
+  if(airtelPrefixes.includes(start3)) return 'airtel';
+  if(viPrefixes.includes(start3)) return 'vi';
+  if(bsnlPrefixes.includes(mobile.slice(0,4))) return 'bsnl';
+  return '';
+}
+
+function formatRupee(n){return '₹'+Number(n).toFixed(0)}
+
+function renderPlans(filter='',sort=''){
+  const wrap = $('plansWrap'); wrap.innerHTML='';
+  Object.keys(plansData).forEach(op=>{
+    const block = document.createElement('div'); block.style.marginBottom='12px';
+    block.innerHTML=`<div class="sticky-head">${op.toUpperCase()}</div>`;
+    const grid = document.createElement('div'); grid.className='plans';
+    const arr = plansData[op].slice();
+    const f = filter.trim().toLowerCase();
+    const filtered = arr.filter(p=>{
+      if(!f) return true;
+      return String(p.amount).includes(f) || p.validity.toLowerCase().includes(f) || p.benefits.toLowerCase().includes(f)
+    });
+    if(sort==='price_asc') filtered.sort((a,b)=>a.amount-b.amount);
+    if(sort==='price_desc') filtered.sort((a,b)=>b.amount-a.amount);
+    filtered.forEach(p=>{
+      const card = document.createElement('div'); card.className='plan';
+      card.innerHTML = `
+        <div class="price">${formatRupee(p.amount)}</div>
+        <div class="muted small">${p.validity} • ${p.benefits}</div>
+        <div style="margin-top:8px;display:flex;gap:8px">
+          <button class="btn" data-op="${op}" data-amt="${p.amount}">Buy</button>
+          <button class="btn secondary" data-sample="${p.amount}">Pay Later</button>
+        </div>`;
+      grid.appendChild(card);
+    });
+    block.appendChild(grid);
+    wrap.appendChild(block);
+  });
+}
+
+function makeUpiUri(upiId,name,amount,note){
+  const pa = encodeURIComponent(upiId);
+  const pn = encodeURIComponent(name);
+  const am = encodeURIComponent(String(amount));
+  const tn = encodeURIComponent(note);
+  return `upi://pay?pa=${pa}&pn=${pn}&am=${am}&cu=INR&tn=${tn}`;
+}
+function makeIntent(upiUri,pkg){
+  const tail = upiUri.replace('upi://','');
+  return `intent://${tail}#Intent;scheme=upi;package=${pkg};end`;
+}
+
+// ===== Events =====
+$('mobile').addEventListener('input',e=>{
+  const v = e.target.value.replace(/[^0-9]/g,'').slice(0,10);
+  e.target.value = v;
+  const suggestion = detectOperatorFromPrefix(v);
+  if(suggestion) {
+    $('operator').value = suggestion;
+    $('detectNote').textContent = 'ऑपरेटर सुझाव: ' + suggestion.toUpperCase();
+  } else $('detectNote').textContent = '';
+});
+
+$('useLast').addEventListener('click',()=>{
+  const last = loadLastNumber(); if(!last) {alert('कोई पिछला नंबर नहीं मिला'); return;} $('mobile').value = last; const s = detectOperatorFromPrefix(last); if(s) $('operator').value=s; $('detectNote').textContent='Last loaded.';
+});
+
+$('toPlans').addEventListener('click',()=>{
+  const m = $('mobile').value.trim(); const op = $('operator').value; const circle=$('circle').value.trim();
+  if(!/^\d{10}$/.test(m)){ alert('सही 10 अंकों का मोबाइल नंबर डालें'); return; }
+  if(!op){ if(!confirm('आपने ऑपरेटर नहीं चुना — जारी रखें?')) return; }
+  state.mobile=m; state.operator=op; state.circle=circle; saveLastNumber(m);
+  $('selectedNumberTag').textContent = `${m} ${op? '• '+op.toUpperCase():''}`;
+  renderPlans($('searchPlan').value,$('sortPlan').value);
+  show('step2');
+});
+
+$('backTo1').addEventListener('click',()=>show('step1'));
+
+$('plansWrap').addEventListener('click',e=>{
+  const btn = e.target.closest('button'); if(!btn) return;
+  if(btn.dataset.op){
+    const op = btn.dataset.op; const amt = Number(btn.dataset.amt);
+    const plan = {amount:amt,operator:op};
+    state.plan = plan;
+    goToPayment();
+  } else if(btn.dataset.sample){
+    alert('Plan saved as sample: ' + btn.dataset.sample);
+  }
+});
+
+$('searchPlan').addEventListener('input',()=>renderPlans($('searchPlan').value,$('sortPlan').value));
+$('sortPlan').addEventListener('change',()=>renderPlans($('searchPlan').value,$('sortPlan').value));
+
+function goToPayment(){
+  if(!state.plan){ alert('पहले प्लान चुनें'); return; }
+  const order = {id:'ORD-'+Date.now(),mobile:state.mobile,operator:state.plan.operator,amount:state.plan.amount,createdAt:new Date().toISOString()};
+  state.order = order;
+  const note = `${NOTE_PREFIX} ${order.id} for ${state.mobile} (${order.operator.toUpperCase()})`;
+  const upiUri = makeUpiUri(UPI_ID,UPI_NAME,order.amount,note);
+  $('summary').textContent = `Order: ${order.id}\nमोबाइल: ${order.mobile}\nऑपरेटर: ${order.operator.toUpperCase()}\nराशि: ${formatRupee(order.amount)}\nनोट: ${note}`;
+  $('gpayBtn').href = makeIntent(upiUri,'com.google.android.apps.nbu.paisa.user');
+  $('phonepeBtn').href = makeIntent(upiUri,'com.phonepe.app');
+  $('anyUpiBtn').href = upiUri;
+  $('qrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiUri)}`;
+  show('step3');
+}
+</script>
+</body>
+</html>
